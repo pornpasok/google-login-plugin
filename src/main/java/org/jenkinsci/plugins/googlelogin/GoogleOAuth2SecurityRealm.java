@@ -177,7 +177,7 @@ public class GoogleOAuth2SecurityRealm extends SecurityRealm {
 
     @Override
     protected String getPostLogOutUrl(StaplerRequest req, Authentication auth) {
-        return "securityRealm/loggedOut";
+        return req.getContextPath() + "/securityRealm/loggedOut";
     }
 
     /**
