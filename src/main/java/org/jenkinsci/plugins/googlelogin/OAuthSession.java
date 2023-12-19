@@ -26,21 +26,17 @@ package org.jenkinsci.plugins.googlelogin;
 import com.google.api.client.auth.oauth2.AuthorizationCodeFlow;
 import com.google.api.client.auth.oauth2.AuthorizationCodeRequestUrl;
 import com.google.api.client.auth.oauth2.AuthorizationCodeResponseUrl;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.model.Failure;
 import hudson.remoting.Base64;
 import hudson.util.HttpResponses;
-import java.security.MessageDigest;
-import org.kohsuke.stapler.HttpRedirect;
-import org.kohsuke.stapler.HttpResponse;
-import org.kohsuke.stapler.Stapler;
-import org.kohsuke.stapler.StaplerRequest;
-
 import java.io.IOException;
 import java.io.Serializable;
-import java.lang.IllegalArgumentException;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.UUID;
+import org.kohsuke.stapler.HttpRedirect;
+import org.kohsuke.stapler.HttpResponse;
+import org.kohsuke.stapler.StaplerRequest;
 
 /**
  * The state of the OAuth request.
@@ -51,7 +47,8 @@ public abstract class OAuthSession implements Serializable {
 
     private static final long serialVersionUID = 1438835558745081350L;
 
-    private final String uuid = Base64.encode(UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8)).substring(0,20);
+    private final String uuid = Base64.encode(UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8))
+            .substring(0, 20);
     /**
      * The url the user was trying to navigate to.
      */
@@ -74,12 +71,13 @@ public abstract class OAuthSession implements Serializable {
      * Starts the login session.
      */
     public HttpResponse doCommenceLogin(AuthorizationCodeFlow flow) throws IOException {
-        AuthorizationCodeRequestUrl authorizationCodeRequestUrl = flow.newAuthorizationUrl().setState(uuid).setRedirectUri(redirectUrl);
+        AuthorizationCodeRequestUrl authorizationCodeRequestUrl =
+                flow.newAuthorizationUrl().setState(uuid).setRedirectUri(redirectUrl);
         if (domain != null) {
             if (domain.contains(",")) {
-                authorizationCodeRequestUrl.set("hd","*");
+                authorizationCodeRequestUrl.set("hd", "*");
             } else {
-                authorizationCodeRequestUrl.set("hd",domain);
+                authorizationCodeRequestUrl.set("hd", domain);
             }
         }
         return new HttpRedirect(authorizationCodeRequestUrl.toString());
@@ -100,7 +98,9 @@ public abstract class OAuthSession implements Serializable {
         try {
             AuthorizationCodeResponseUrl responseUrl = new AuthorizationCodeResponseUrl(buf.toString());
             String state = responseUrl.getState();
-            if (state == null || !MessageDigest.isEqual(uuid.getBytes(StandardCharsets.UTF_8), state.getBytes(StandardCharsets.UTF_8))) {
+            if (state == null
+                    || !MessageDigest.isEqual(
+                            uuid.getBytes(StandardCharsets.UTF_8), state.getBytes(StandardCharsets.UTF_8))) {
                 return HttpResponses.error(401, "State is invalid");
             }
             String code = responseUrl.getCode();

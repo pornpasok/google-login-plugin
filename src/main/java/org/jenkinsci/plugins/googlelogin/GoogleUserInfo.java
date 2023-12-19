@@ -23,15 +23,13 @@
  */
 package org.jenkinsci.plugins.googlelogin;
 
-import java.io.IOException;
-
 import com.google.api.client.util.Key;
-
 import hudson.Extension;
 import hudson.model.User;
 import hudson.model.UserProperty;
 import hudson.model.UserPropertyDescriptor;
 import hudson.tasks.Mailer;
+import java.io.IOException;
 
 /**
  * Represents an identity information from the oauth provider.
@@ -83,11 +81,9 @@ public class GoogleUserInfo extends UserProperty {
      */
     public void updateProfile(hudson.model.User u) throws IOException {
         // update the user profile by the externally given information
-        if (email != null)
-            u.addProperty(new Mailer.UserProperty(email));
+        if (email != null) u.addProperty(new Mailer.UserProperty(email));
 
-        if (name != null)
-            u.setFullName(name);
+        if (name != null) u.setFullName(name);
 
         u.addProperty(this);
     }
