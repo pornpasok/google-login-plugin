@@ -47,6 +47,9 @@ import hudson.model.User;
 import hudson.security.SecurityRealm;
 import hudson.util.HttpResponses;
 import hudson.util.Secret;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.StringTokenizer;
 import jenkins.model.Jenkins;
 import jenkins.security.SecurityListener;
 import org.acegisecurity.Authentication;
@@ -67,10 +70,6 @@ import org.kohsuke.stapler.HttpResponse;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.Stapler;
 import org.kohsuke.stapler.StaplerRequest;
-
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.StringTokenizer;
 
 /**
  * Login with Google using OpenID Connect / OAuth 2
@@ -164,15 +163,12 @@ public class GoogleOAuth2SecurityRealm extends SecurityRealm {
      */
     @Override
     public SecurityComponents createSecurityComponents() {
-        return new SecurityComponents(
-                new AuthenticationManager() {
-                    public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-                        if (authentication instanceof AnonymousAuthenticationToken)
-                            return authentication;
-                        throw new BadCredentialsException("Unexpected authentication type: " + authentication);
-                    }
-                }
-        );
+        return new SecurityComponents(new AuthenticationManager() {
+            public Authentication authenticate(Authentication authentication) throws AuthenticationException {
+                if (authentication instanceof AnonymousAuthenticationToken) return authentication;
+                throw new BadCredentialsException("Unexpected authentication type: " + authentication);
+            }
+        });
     }
 
     @Override
@@ -185,12 +181,19 @@ public class GoogleOAuth2SecurityRealm extends SecurityRealm {
      */
     @SuppressWarnings("unused") // stapler
     @Restricted(DoNotUse.class) // stapler only
-    public HttpResponse doCommenceLogin(StaplerRequest request, @QueryParameter String from,  @Header("Referer") final String referer) throws IOException {
+    public HttpResponse doCommenceLogin(
+            StaplerRequest request, @QueryParameter String from, @Header("Referer") final String referer)
+            throws IOException {
         final String redirectOnFinish = getRedirectOnFinish(from, referer);
 
         final AuthorizationCodeFlow flow = new AuthorizationCodeFlow.Builder(
-                BearerToken.queryParameterAccessMethod(), HTTP_TRANSPORT, JSON_FACTORY, TOKEN_SERVER_URL,
-                new ClientParametersAuthentication(clientId, clientSecret.getPlainText()), clientId, AUTHORIZATION_SERVER_URL)
+                        BearerToken.queryParameterAccessMethod(),
+                        HTTP_TRANSPORT,
+                        JSON_FACTORY,
+                        TOKEN_SERVER_URL,
+                        new ClientParametersAuthentication(clientId, clientSecret.getPlainText()),
+                        clientId,
+                        AUTHORIZATION_SERVER_URL)
                 .setScopes(Arrays.asList(SCOPE))
                 .build();
 
@@ -219,7 +222,7 @@ public class GoogleOAuth2SecurityRealm extends SecurityRealm {
                     HttpRequest request = requestFactory.buildGetRequest(url);
 
                     GoogleUserInfo info = request.execute().parseAs(GoogleUserInfo.class);
-                    GrantedAuthority[] authorities = new GrantedAuthority[]{SecurityRealm.AUTHENTICATED_AUTHORITY};
+                    GrantedAuthority[] authorities = new GrantedAuthority[] {SecurityRealm.AUTHENTICATED_AUTHORITY};
                     // logs this user in.
                     UsernamePasswordAuthenticationToken token =
                             new UsernamePasswordAuthenticationToken(info.getEmail(), "", authorities);
@@ -241,7 +244,6 @@ public class GoogleOAuth2SecurityRealm extends SecurityRealm {
                 } catch (IOException e) {
                     return HttpResponses.error(500, e);
                 }
-
             }
         };
         request.getSession().setAttribute(SESSION_NAME, oAuthSession);
@@ -291,7 +293,6 @@ public class GoogleOAuth2SecurityRealm extends SecurityRealm {
             return Jenkins.getInstance().getRootUrl();
         }
     }
-
 
     /**
      * This is where the user comes back to at the end of the OpenID redirect ping-pong.
